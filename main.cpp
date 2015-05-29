@@ -32,6 +32,7 @@ void PrintEvalFunc()
 }
 int main()
 {
+	std::cout << "hoge" << std::endl;
 	std::ofstream ofs("out.txt");
 	double c1 = 0.5, c2 = 0.5, r1, r2, w = 0.8;
 	double gb;
