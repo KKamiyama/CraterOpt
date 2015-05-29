@@ -7,7 +7,7 @@
 
 namespace kamiyama
 {
-	double rastrigin2d(const Eigen::VectorXd &x)
+	double rastrigin(const Eigen::VectorXd &x)
 	{
 		double sum = 0.0;
 		for (int i = 0; i < x.size(); i++)
@@ -20,7 +20,7 @@ namespace kamiyama
 		using Eigen::VectorXd;
 		const int dim = 2;
 
-		Optimazation::PSO pso(dim, rastrigin2d, 20);
+		Optimazation::PSO pso(dim, rastrigin, 20);
 
 		VectorXd min(dim), max(dim);
 		min << -5, -5;
