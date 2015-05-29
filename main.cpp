@@ -4,7 +4,7 @@
 
 int main()
 {
-	std::cout << "select test code [0:kamiyama, 1:okada]:" << std::endl;
+	std::cout << "Select test code [0:kamiyama, 1:okada]:" << std::endl;
 	int test = 0;
 	std::cin >> test;
 	switch (test)
