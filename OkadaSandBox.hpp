@@ -48,8 +48,8 @@ namespace okada
 		ofs << "#gb_pos gb_val" << "\n";
 		for (int n = 0; n<100; n++)
 		{
-			r1 = rand() / RAND_MAX;
-			r2 = rand() / RAND_MAX;
+			r1 = (double)rand() / RAND_MAX;
+			r2 = (double)rand() / RAND_MAX;
 			for (int i = 0; i<N; i++)
 			{
 				v[i] = w*v[i] + c1*r1*(xhat[i] - x[i]) + c2*r2*(xg - x[i]);
