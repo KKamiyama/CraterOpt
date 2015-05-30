@@ -21,7 +21,7 @@ namespace kamiyama
 		return x.squaredNorm();
 	}
 
-	void printParticles(const Optimazation::PSO &pso)
+	void print_particles(const Optimazation::PSO &pso)
 	{
 		static int count = 0;
 		std::ofstream ofs((boost::format("p_%03d.txt") % count++).str());
@@ -36,18 +36,13 @@ namespace kamiyama
 
 		Optimazation::PSO pso(dim, simple_pow, 10);
 
-		VectorXd min(dim), max(dim);
-		min << -5, -5;
-		max << 5, 5;
-
-		pso.initParticles(min, max);
+		pso.initParticles(VectorXd::Constant(dim, -5), VectorXd::Constant(dim, 5));
 
 		for (int i = 0; i < 10; i++)
 		{
-			printParticles(pso);
+			print_particles(pso);
 			std::cout << "iter: " << i << ", gb = " << pso.global_best_val << " at " << pso.global_best.transpose() << std::endl;
-			for (int j = 0; j < 10; j++)
-				pso.update();
+			pso.update();
 		}
 
 		std::cout << "Not implemented yet!\nPress enter to exit." << std::endl;
