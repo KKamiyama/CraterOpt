@@ -4,6 +4,8 @@
 
 #include "PSO.hpp"
 #include <iostream>
+#include <fstream>
+#include <boost/format.hpp>
 
 namespace kamiyama
 {
@@ -12,7 +14,19 @@ namespace kamiyama
 		double sum = 0.0;
 		for (int i = 0; i < x.size(); i++)
 			sum += x[i] * x[i] - 10 * cos(2 * M_PI * x[i]);
-		return sum;
+		return sum + 10 * x.size();
+	}
+	double simple_pow(const Eigen::VectorXd &x)
+	{
+		return x.squaredNorm();
+	}
+
+	void printParticles(const Optimazation::PSO &pso)
+	{
+		static int count = 0;
+		std::ofstream ofs((boost::format("p_%03d.txt") % count++).str());
+		for (auto p = pso.particles.begin(); p != pso.particles.end(); p++)
+			ofs << p->transpose() << "\n";
 	}
 
 	void test()
@@ -20,13 +34,21 @@ namespace kamiyama
 		using Eigen::VectorXd;
 		const int dim = 2;
 
-		Optimazation::PSO pso(dim, rastrigin, 20);
+		Optimazation::PSO pso(dim, simple_pow, 10);
 
 		VectorXd min(dim), max(dim);
 		min << -5, -5;
 		max << 5, 5;
 
 		pso.initParticles(min, max);
+
+		for (int i = 0; i < 10; i++)
+		{
+			printParticles(pso);
+			std::cout << "iter: " << i << ", gb = " << pso.global_best_val << " at " << pso.global_best.transpose() << std::endl;
+			for (int j = 0; j < 10; j++)
+				pso.update();
+		}
 
 		std::cout << "Not implemented yet!\nPress enter to exit." << std::endl;
 		std::rewind(stdin);

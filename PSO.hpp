@@ -1,7 +1,8 @@
 #pragma once
 #include <Eigen/Core>
-#include <list>
+#include <vector>
 #include <functional>
+#include <iostream>
 
 namespace Optimazation
 {
@@ -9,10 +10,11 @@ namespace Optimazation
 	{
 		public:
 		PSO(unsigned int dim, std::function<double(const Eigen::VectorXd &)> eval, unsigned int n_particles) : 
-			_dim(dim), _eval(eval), particles(n_particles), velocities(n_particles), local_best_val(n_particles)
+			_dim(dim), _eval(eval), particles(n_particles), velocities(n_particles), local_best(n_particles), local_best_val(n_particles)
 		{
-			for (auto p = particles.begin(); p != particles.end(); p++)
-				*p = Eigen::VectorXd::Random(_dim);
+			srand(NULL);
+			for (int i = 0; i < n_particles; i++)
+				local_best[i] = particles[i] = Eigen::VectorXd::Random(_dim);
 			for (auto v = velocities.begin(); v != velocities.end(); v++)
 				*v = Eigen::VectorXd::Random(_dim) * _init_vel_max;
 		}
@@ -41,18 +43,12 @@ namespace Optimazation
 		std::vector<double> local_best_val;
 		Eigen::VectorXd global_best;
 		double global_best_val = DBL_MAX;
-		private:
-		unsigned int _dim;
-		Eigen::VectorXd _min, _max;
-		std::function<double(const Eigen::VectorXd &)> _eval;
-		double _init_vel_max = 0.1;
-		double w = 0.8, c1 = 0.5, c2 = 0.5;
 		void update()
 		{
 			for (int i = 0; i < particles.size(); i++)
 			{
-				double r1 = rand() / RAND_MAX;
-				double r2 = rand() / RAND_MAX;
+				double r1 = (double)rand() / RAND_MAX;
+				double r2 = (double)rand() / RAND_MAX;
 				velocities[i] = w * velocities[i]
 					+ c1 * r1 * (local_best[i] - particles[i])
 					+ c2 * r2 * (global_best - particles[i]);
@@ -70,5 +66,12 @@ namespace Optimazation
 				}
 			}
 		}
+		private:
+		unsigned int _dim;
+		Eigen::VectorXd _min, _max;
+		std::function<double(const Eigen::VectorXd &)> _eval;
+		double _init_vel_max = 1;
+		double w = 0.5, c1 = 0.2, c2 = 0.2;
+		
 	};
 }
