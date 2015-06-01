@@ -12,6 +12,7 @@ namespace Optimazation
 		PSO(unsigned int dim, std::function<double(const Eigen::VectorXd &)> eval, unsigned int n_particles) : 
 			_dim(dim), _eval(eval), particles(n_particles), velocities(n_particles), local_best(n_particles), local_best_val(n_particles)
 		{
+			// TODO: 乱数はメルセンヌツイスタに変更するべき
 			srand(NULL);
 			for (int i = 0; i < n_particles; i++)
 				local_best[i] = particles[i] = Eigen::VectorXd::Random(_dim);
@@ -37,6 +38,7 @@ namespace Optimazation
 				}
 			}
 		}
+		// TODO デバッグ用に現在の値を保存してもいい
 		std::vector<Eigen::VectorXd> particles;
 		std::vector<Eigen::VectorXd> velocities;
 		std::vector<Eigen::VectorXd> local_best;
@@ -70,8 +72,9 @@ namespace Optimazation
 		unsigned int _dim;
 		Eigen::VectorXd _min, _max;
 		std::function<double(const Eigen::VectorXd &)> _eval;
+		// TODO: パラメータを設定可能に
 		double _init_vel_max = 1;
+		// TODO: パラメータを設定可能に
 		double w = 0.5, c1 = 0.2, c2 = 0.2;
-		
 	};
 }

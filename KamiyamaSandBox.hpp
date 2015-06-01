@@ -26,7 +26,7 @@ namespace kamiyama
 		static int count = 0;
 		std::ofstream ofs((boost::format("p_%03d.txt") % count++).str());
 		for (auto p = pso.particles.begin(); p != pso.particles.end(); p++)
-			ofs << p->transpose() << "\n";
+			ofs << p->transpose() << " " << simple_pow(*p) << "\n";
 	}
 
 	void test()

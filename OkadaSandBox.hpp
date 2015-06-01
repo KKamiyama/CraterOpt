@@ -119,6 +119,7 @@ namespace okada
 			}
 
 		}
+		// TODO: min, maxが適用されていない
 		void initFireflies(Eigen::VectorXd min, Eigen::VectorXd max)
 		{
 			_min = min;
@@ -151,6 +152,7 @@ namespace okada
 			{
 				for (int j = 0; j < i; j++)
 				{
+					// MEMO: 最小化問題を解くことにします。最大化問題は符号を反転すれば最小化問題に変換可能です。 by kamiyama
 					if (intensity[j] < intensity[i])		//不等号の向きは解く問題の種類による?
 					{
 						e = Eigen::VectorXd::Random(_dim);
