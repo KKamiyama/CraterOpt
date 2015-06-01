@@ -107,4 +107,65 @@ namespace okada
 			lb[i] = position[i];
 		}
 	}
+	class FA
+	{
+	public:
+		FA(unsigned int dim, std::function<double(const Eigen::VectorXd &)> eval, unsigned int n_fireflies) :
+			_dim(dim), _eval(eval), fireflies(n_fireflies), intensity(n_fireflies)
+		{
+			for (auto p = fireflies.begin(); p != fireflies.end(); p++)
+			{
+				*p = Eigen::VectorXd::Random(_dim);
+			}
+
+		}
+		void initFireflies(Eigen::VectorXd min, Eigen::VectorXd max)
+		{
+			_min = min;
+			_max = max;
+			for (int p = 0; p < fireflies.size(); p++)
+			{
+				fireflies[p] = Eigen::VectorXd::Random(_dim);
+				for (unsigned int i = 0; i < _dim; i++)
+				{
+					intensity[p] = _eval(fireflies[p]);
+					if (intensity[p] < global_best_val)
+					{
+						global_best_val = intensity[p];
+						global_best = fireflies[p];
+					}
+				}
+			}
+		}
+		std::vector<Eigen::VectorXd> fireflies;
+		std::vector<double> intensity;
+		Eigen::VectorXd global_best;
+		double global_best_val = DBL_MAX;
+	private:
+		unsigned int _dim;
+		Eigen::VectorXd _min, _max,e;
+		std::function < double(const Eigen::VectorXd &)> _eval;
+		double a = 0.1, b,r,gamma=1.0;
+		void update(){
+			for (int i = 0; i < fireflies.size(); i++)
+			{
+				for (int j = 0; j < i; j++)
+				{
+					if (intensity[j] < intensity[i])		//•s“™†‚ÌŒü‚«‚Í‰ð‚­–â‘è‚ÌŽí—Þ‚É‚æ‚é?
+					{
+						e = Eigen::VectorXd::Random(_dim);
+						r = (fireflies[i] - fireflies[j]).norm;
+						fireflies[i] += b*exp(-gamma*r*r)*(fireflies[j] - fireflies[i]) + a*e;
+						intensity[i] = _eval(fireflies[i]);
+						if (intensity[i] < global_best_val)
+						{
+							global_best_val = intensity[i];
+							global_best = fireflies[i];
+						}
+					}
+				}
+			}
+		}
+
+	};
 }
