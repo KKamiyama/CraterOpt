@@ -126,9 +126,11 @@ namespace okada
 			_max = max;
 			for (int p = 0; p < fireflies.size(); p++)
 			{
-				fireflies[p] = Eigen::VectorXd::Random(_dim);
+				fireflies[p] = Eigen::VectorXd::Random(_dim);//[-1:1]
+
 				for (unsigned int i = 0; i < _dim; i++)
 				{
+					fireflies[p][i] = (max[i] - min[i])*(fireflies[p][i] + 1.0)/2.0 + min[i];
 					intensity[p] = _eval(fireflies[p]);
 					if (intensity[p] < global_best_val)
 					{
@@ -156,7 +158,7 @@ namespace okada
 					if (intensity[j] < intensity[i])		//•s“™†‚ÌŒü‚«‚Í‰ð‚­–â‘è‚ÌŽí—Þ‚É‚æ‚é?
 					{
 						e = Eigen::VectorXd::Random(_dim);
-						r = (fireflies[i] - fireflies[j]).norm;
+						r = (fireflies[i] - fireflies[j]).norm();
 						fireflies[i] += b*exp(-gamma*r*r)*(fireflies[j] - fireflies[i]) + a*e;
 						intensity[i] = _eval(fireflies[i]);
 						if (intensity[i] < global_best_val)
@@ -170,4 +172,21 @@ namespace okada
 		}
 
 	};
+	double rastrigin(const Eigen::VectorXd &x)
+	{
+		double sum = 0.0;
+		for (int i = 0; i < x.size(); i++)
+			sum += x[i] * x[i] - 10 * cos(2 * M_PI * x[i]);
+		return sum + 10 * x.size();
+	}
+	void FAtest()
+	{
+		using Eigen::VectorXd;
+		const int dim = 2;
+
+		FA fa(dim, rastrigin, 10);
+
+		fa.initFireflies(Eigen::VectorXd::Constant(dim, -10), Eigen::Vector2cd::Constant(dim, 10));
+
+	}
 }
