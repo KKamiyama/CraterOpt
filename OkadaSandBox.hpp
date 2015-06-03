@@ -1,6 +1,9 @@
 #pragma once
 
 #define USE_MATH_DEFINES
+
+#include "EigenUtil.hpp"
+
 #include <iostream>
 #include <fstream>
 #include <time.h>
@@ -144,12 +147,8 @@ namespace okada
 		std::vector<double> intensity;
 		Eigen::VectorXd global_best;
 		double global_best_val = DBL_MAX;
-	private:
-		unsigned int _dim;
-		Eigen::VectorXd _min, _max,e;
-		std::function < double(const Eigen::VectorXd &)> _eval;
-		double a = 0.1, b,r,gamma=1.0;
-		void update(){
+	
+		void update(double min, double max, int dim, bool option){
 			for (int i = 0; i < fireflies.size(); i++)
 			{
 				for (int j = 0; j < i; j++)
@@ -157,7 +156,7 @@ namespace okada
 					// MEMO: 最小化問題を解くことにします。最大化問題は符号を反転すれば最小化問題に変換可能です。 by kamiyama
 					if (intensity[j] < intensity[i])		//不等号の向きは解く問題の種類による?
 					{
-						e = Eigen::VectorXd::Random(_dim);
+						e = Eigen::Util::GenerateRandomVector(dim, min, max);
 						r = (fireflies[i] - fireflies[j]).norm();
 						fireflies[i] += b*exp(-gamma*r*r)*(fireflies[j] - fireflies[i]) + a*e;
 						intensity[i] = _eval(fireflies[i]);
@@ -167,11 +166,22 @@ namespace okada
 							global_best = fireflies[i];
 						}
 					}
+					if (option){
+						u = Eigen::Util::GenerateRandomVector(dim, min, max);
+						global_best += u;
+						global_best_val = _eval(global_best);
+					}
 				}
 			}
 		}
+	private:
+		unsigned int _dim;
+		Eigen::VectorXd _min, _max, e,u;
+		std::function < double(const Eigen::VectorXd &)> _eval;
+		double a = 0.1, b, r, gamma = 1.0;
 
 	};
+	
 	double rastrigin(const Eigen::VectorXd &x)
 	{
 		double sum = 0.0;
@@ -179,14 +189,43 @@ namespace okada
 			sum += x[i] * x[i] - 10 * cos(2 * M_PI * x[i]);
 		return sum + 10 * x.size();
 	}
-	void FAtest()
+	double simple_pow(const Eigen::VectorXd &x)
+	{
+		return x.squaredNorm();
+	}
+	void print_fireflies(const FA &fa)
+	{
+		static int count = 0;
+		std::ofstream ofs((boost::format("p_%03d.txt") % count++).str());
+		for (auto p = fa.fireflies.begin(); p != fa.fireflies.end(); p++)
+			ofs << p->transpose() << " " << simple_pow(*p) << "\n";
+	}
+	void FAtest( bool option=false )
 	{
 		using Eigen::VectorXd;
 		const int dim = 2;
+/*
+		Eigen::VectorXd v = Eigen::Util::GenerateRandomVector(5, 11.1, 22.2);
+
+		std::cout << v << std::endl;
+		rewind(stdin);
+		getchar();
+		return;*/
 
 		FA fa(dim, rastrigin, 10);
 
-		fa.initFireflies(Eigen::VectorXd::Constant(dim, -10), Eigen::Vector2cd::Constant(dim, 10));
+		fa.initFireflies(Eigen::VectorXd::Constant(dim, -10), Eigen::VectorXd::Constant(dim, 10));
 
+		for (int i = 0; i < 10; i++)
+		{
+			print_fireflies(fa);
+			std::cout << "iter: " << i << ", gb = " << fa.global_best_val << " at " << fa.global_best.transpose() << std::endl;
+			//min,max,gbの更新の有無(default=true)
+			fa.update(-10, 10, dim, option);
+		}
+
+		std::cout << "Not implemented yet!\nPress enter to exit." << std::endl;
+		std::rewind(stdin);
+		std::getchar();
 	}
 }
