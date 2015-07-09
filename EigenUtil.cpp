@@ -14,3 +14,10 @@ Eigen::VectorXd Eigen::Util::GenerateRandomVector(int dim, double min, double ma
 		v[i] = dist(mt);
 	return v;
 }
+Eigen::VectorXi Eigen::Util::GenerateRandomVectorInt(int dim, int min, int max) {
+	std::uniform_int_distribution<int> dist(min, max);
+	Eigen::VectorXi v(dim);
+	for (int i = 0; i < dim; i++)
+		v[i] = dist(mt);
+	return v;
+}

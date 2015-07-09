@@ -12,6 +12,8 @@
 #include <iostream>
 #include <Eigen/Dense>
 #include <Eigen/StdVector>
+#include<opencv2\opencv.hpp>
+#include<opencv2\core\eigen.hpp>
 
 namespace okada
 {
@@ -122,6 +124,7 @@ namespace okada
 			}
 
 		}
+	
 		// TODO: min, maxが適用されていない
 		void initFireflies(Eigen::VectorXd min, Eigen::VectorXd max)
 		{
@@ -143,45 +146,116 @@ namespace okada
 				}
 			}
 		}
-		std::vector<Eigen::VectorXd> fireflies;
-		std::vector<double> intensity;
-		Eigen::VectorXd global_best;
-		double global_best_val = DBL_MAX;
-	
-		void update(double min, double max, int dim, bool option){
-			for (int i = 0; i < fireflies.size(); i++)
+		void initFirefliesm(Eigen::VectorXi min, Eigen::VectorXi max)
+		{
+			_min = min;
+			_max = max;
+			for (int p = 0; p < fireflies.size(); p++)
 			{
-				for (int j = 0; j < i; j++)
+				firefliesm[p] = Eigen::VectorXi::Random(_dim);//[-1:1]
+
+				for (unsigned int i = 0; i < _dim; i++)
 				{
-					// MEMO: 最小化問題を解くことにします。最大化問題は符号を反転すれば最小化問題に変換可能です。 by kamiyama
-					if (intensity[j] < intensity[i])		//不等号の向きは解く問題の種類による?
+					firefliesm[p][i] = (max[i] - min[i])*(fireflies[p][i] + 1.0) / 2.0 + min[i];
+					intensity[p] = _evalm(firefliesm[p], target);
+					if (intensity[p] < global_best_val)
 					{
-						e = Eigen::Util::GenerateRandomVector(dim, min, max);
-						r = (fireflies[i] - fireflies[j]).norm();
-						fireflies[i] += b*exp(-gamma*r*r)*(fireflies[j] - fireflies[i]) + a*e;
-						intensity[i] = _eval(fireflies[i]);
-						if (intensity[i] < global_best_val)
-						{
-							global_best_val = intensity[i];
-							global_best = fireflies[i];
-						}
-					}
-					if (option){
-						u = Eigen::Util::GenerateRandomVector(dim, min, max);
-						global_best += u;
-						global_best_val = _eval(global_best);
+						global_best_val = intensity[p];
+						global_best = fireflies[p];
 					}
 				}
 			}
 		}
+		std::vector<Eigen::VectorXd> fireflies;
+		std::vector<Eigen::VectorXi> firefliesm;
+		std::vector<double> intensity;
+		Eigen::VectorXd global_best;
+		double global_best_val = DBL_MAX;
+		
+	
+		void update(double min, double max, int dim, bool option){
+			int t = 0;
+			while (t < 100){
+				for (int i = 0; i < fireflies.size(); i++)
+				{
+					for (int j = 0; j < fireflies.size(); j++)
+					{
+						// MEMO: 最小化問題を解くことにします。最大化問題は符号を反転すれば最小化問題に変換可能です。 by kamiyama
+						if (intensity[j] < intensity[i])		//不等号の向きは解く問題の種類による?
+						{
+							e = Eigen::Util::GenerateRandomVector(dim, -0.5, 0.5);
+							r = (fireflies[i] - fireflies[j]).norm();
+							fireflies[i] += b*exp(-gamma*r*r)*(fireflies[j] - fireflies[i]) + a*e;
+							intensity[i] = _eval(fireflies[i]);
+						}
+						if (option){
+							u = Eigen::Util::GenerateRandomVector(dim, min, max);
+							global_best += u;
+							global_best_val = _eval(global_best);
+						}
+					}
+				}
+				for (int i = 0; i < fireflies.size(); i++){
+					if (intensity[i] < global_best_val)
+					{
+						global_best_val = intensity[i];
+						global_best = fireflies[i];
+					}
+				}
+				//
+				t++;
+			}
+		}
+		void updatematch(double min, double max, int dim, bool option){
+			int t = 0;
+			while (t < 100){
+				for (int i = 0; i < fireflies.size(); i++)
+				{
+					for (int j = 0; j < fireflies.size(); j++)
+					{
+						// MEMO: 最小化問題を解くことにします。最大化問題は符号を反転すれば最小化問題に変換可能です。 by kamiyama
+						if (intensity[j] < intensity[i])		//不等号の向きは解く問題の種類による?
+						{
+							em = Eigen::Util::GenerateRandomVectorInt(dim, -5, 5);
+							r = (fireflies[i] - fireflies[j]).norm();
+							firefliesm[i] += (Eigen::VectorXi)(b*exp(-gamma*r*r)*(fireflies[j] - fireflies[i]) + a*e);
+							intensity[i] = _evalm(fireflies[i], target);
+						}
+						if (option){
+							um = Eigen::Util::GenerateRandomVectorInt(dim, min, max);
+							global_best += um;
+							global_best_val = _evalm(global_best, target);
+						}
+					}
+				}
+				for (unsigned int i = 0; i < fireflies.size(); i++){
+					if (intensity[i] < global_best_val)
+					{
+						global_best_val = intensity[i];
+						global_best = fireflies[i];
+					}
+				}
+				//
+				t++;
+			}
+		}
+		void settarget(cv::Mat src){
+			cv::cv2eigen(src, target);
+		}
+		
 	private:
 		unsigned int _dim;
 		Eigen::VectorXd _min, _max, e,u;
+		Eigen::VectorXi _mimm, _maxm, em, um;
 		std::function < double(const Eigen::VectorXd &)> _eval;
-		double a = 0.1, b, r, gamma = 1.0;
+		std::function<double(const Eigen::VectorXd &, Eigen::MatrixXd &)> _evalm;
+		Eigen::MatrixXd target;
+		double a = 0.1, b=1.5, r, gamma = 0.25;
 
 	};
-	
+	double matching(int x, int y, Eigen::MatrixXd target){
+		return target(y, x);
+	}
 	double rastrigin(const Eigen::VectorXd &x)
 	{
 		double sum = 0.0;
@@ -198,7 +272,8 @@ namespace okada
 		static int count = 0;
 		std::ofstream ofs((boost::format("p_%03d.txt") % count++).str());
 		for (auto p = fa.fireflies.begin(); p != fa.fireflies.end(); p++)
-			ofs << p->transpose() << " " << simple_pow(*p) << "\n";
+			//ofs << p->transpose() << " " << simple_pow(*p) << "\n";
+			ofs << p->transpose() << " " << rastrigin(*p) << "\n";
 	}
 	void FAtest( bool option=false )
 	{
@@ -209,14 +284,16 @@ namespace okada
 
 		std::cout << v << std::endl;
 		rewind(stdin);
+
+
 		getchar();
 		return;*/
 
+		//FA fa(dim,simple_pow, 10);
 		FA fa(dim, rastrigin, 10);
-
 		fa.initFireflies(Eigen::VectorXd::Constant(dim, -10), Eigen::VectorXd::Constant(dim, 10));
 
-		for (int i = 0; i < 10; i++)
+		for (int i = 0; i < 1000; i++)
 		{
 			print_fireflies(fa);
 			std::cout << "iter: " << i << ", gb = " << fa.global_best_val << " at " << fa.global_best.transpose() << std::endl;
@@ -227,5 +304,28 @@ namespace okada
 		std::cout << "Not implemented yet!\nPress enter to exit." << std::endl;
 		std::rewind(stdin);
 		std::getchar();
+	}
+	
+	void matchingtest(bool option)
+	{
+		cv::Mat src = cv::imread("fitness_gauss2px.png",0);
+		const int dim = 2;
+		FA fa(dim, matching, 100);
+		fa.settarget(src);
+		//画像サイズは正方形を前提
+		int width = src.cols - 1;
+		fa.initFirefliesm(Eigen::VectorXi::Constant(dim, 0), Eigen::VectorXi::Constant(dim, width));
+		for (int i = 0; i < 1000; i++)
+		{
+			print_fireflies(fa);
+			std::cout << "iter: " << i << ", gb = " << fa.global_best_val << " at " << fa.global_best.transpose() << std::endl;
+			//min,max,gbの更新の有無(default=true)
+			fa.updatematch(0, width, dim, option);
+		}
+
+		std::cout << "Not implemented yet!\nPress enter to exit." << std::endl;
+		std::rewind(stdin);
+		std::getchar();
+
 	}
 }

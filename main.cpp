@@ -1,6 +1,6 @@
 #define _USE_MATH_DEFINES
 #include "KamiyamaSandBox.hpp"
-#include "OkadaSandBox.hpp"
+#include "OkadaSandBox2.hpp"
 
 int main()
 {
@@ -23,7 +23,7 @@ int main()
 		case 1:
 			std::cout << "最適解の更新 [0:なし　1：あり]:" << std::endl;
 			std::cin >> option;
-			okada::FAtest(option);
+			okada::matchingtest(option);
 			break;
 		default: break;
 		}
