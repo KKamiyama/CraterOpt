@@ -117,7 +117,7 @@ namespace okada
 	class FA
 	{
 	public:
-		FA(unsigned int dim, std::function<double(const Eigen::VectorXi &, Eigen::MatrixXd &)> eval, unsigned int n_fireflies) :
+		FA(unsigned int dim, std::function<double(const Eigen::VectorXi &, Eigen::Matrix < double, Eigen::Dynamic, Eigen::Dynamic>)> eval, unsigned int n_fireflies) :
 			_dim(dim), _eval(eval), fireflies(n_fireflies), intensity(n_fireflies)
 		{
 			for (auto p = fireflies.begin(); p != fireflies.end(); p++)
@@ -151,6 +151,7 @@ namespace okada
 		Eigen::VectorXi global_best;
 		double global_best_val = DBL_MAX;
 		Eigen::Matrix < double, Eigen::Dynamic, Eigen::Dynamic> target;
+		Eigen::Matrix < double, Eigen::Dynamic, Eigen::Dynamic> *tptr = &target;
 	
 		//void update(double min, double max, int dim, bool option){
 		//	int t = 0;
@@ -186,10 +187,8 @@ namespace okada
 		//	}
 		//}
 		void updatematch(double min, double max, int dim, bool option){
-			int t = 0;
-			
-
-			while (t < 10){
+			//int t = 0;
+		//	while (t < 10){
 				for (int i = 0; i < fireflies.size(); i++)
 				{
 					for (int j = 0; j < fireflies.size(); j++)
@@ -197,7 +196,7 @@ namespace okada
 						// MEMO: 最小化問題を解くことにします。最大化問題は符号を反転すれば最小化問題に変換可能です。 by kamiyama
 						if (intensity[j] < intensity[i])		//不等号の向きは解く問題の種類による?
 						{
-							e = Eigen::Util::GenerateRandomVectorInt(dim, -10, 10);
+							e = Eigen::Util::GenerateRandomVectorInt(dim, -15, 15);
 							r = (fireflies[i] - fireflies[j]).norm();
 							fireflies[i] += (Eigen::VectorXi)(b*exp(-gamma*r*r)*(fireflies[j] - fireflies[i]) + a*e);
 							//範囲外に出た場合の処理
@@ -205,7 +204,7 @@ namespace okada
 							intensity[i] = _eval(fireflies[i], target);
 						}
 						if (option){
-							u = Eigen::Util::GenerateRandomVectorInt(dim, min, max);
+							u = Eigen::Util::GenerateRandomVectorInt(dim, -10, 10);
 							global_best += u;
 							boundarycheck(global_best, dim, min, max);
 							global_best_val = _eval(global_best, target);
@@ -219,8 +218,8 @@ namespace okada
 						global_best = fireflies[i];
 					}
 				}
-				t++;
-			}
+			//	t++;
+			//}
 		}
 		void settarget(cv::Mat &src){
 			
@@ -230,12 +229,12 @@ namespace okada
 	private:
 		unsigned int _dim;
 		Eigen::VectorXi _min, _max,u,e;
-		std::function < double(const Eigen::VectorXi &, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> )> _eval;
+		std::function < double(const Eigen::VectorXi &, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> &)> _eval;
 		
-		double a = 1, b=1, r, gamma = 0.25;
+		double a = 1, b=5, r, gamma = 0.25;
 
 	};
-	double matching(Eigen::VectorXi point, Eigen::Matrix< double, Eigen::Dynamic, Eigen::Dynamic> target){
+	double matching(const Eigen::VectorXi point, Eigen::Matrix< double, Eigen::Dynamic, Eigen::Dynamic> &target ){
 		int x = point(0);
 		int y = point(1);
 		return target(point(1), point(0));
@@ -273,7 +272,7 @@ namespace okada
 		for (auto p = fa.fireflies.begin(); p != fa.fireflies.end(); p++)
 			//ofs << p->transpose() << " " << simple_pow(*p) << "\n";
 			//ofs << p->transpose() << " " << rastrigin(*p) << "\n";
-			ofs << p->transpose() << " " << matching(*p, fa.target) << std::endl;
+			ofs << p->transpose() << " " << matching(*p, *(fa.tptr)) << std::endl;
 	}
 	//void FAtest( bool option=false )
 	//{
@@ -304,8 +303,7 @@ namespace okada
 			exit(1);
 		}
 		const int dim = 2;
-		FA fa(dim, matching, 10);
-
+		FA fa(dim, matching, 20);
 		fa.settarget(src);
 
 		//画像サイズは正方形を前提
@@ -314,7 +312,7 @@ namespace okada
 		for (int i = 0; i < fa.fireflies.size();i++)
 			std::cout << fa.fireflies[i].transpose() << std::endl;
 
-		for (int i = 0; i < 10; i++)
+		for (int i = 0; i < 50; i++)
 		{
 			print_fireflies(fa);
 			std::cout << "iter: " << i << ", gb = " << fa.global_best_val << " at " << fa.global_best.transpose() << std::endl;
